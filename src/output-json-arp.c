@@ -204,19 +204,19 @@ int JsonArpLogCondition(ThreadVars * tv, const Packet * p, void *state, void *tx
     return 1; // always log
 }
 
-void JsonArpLogRegister(void)
-{
-    /* register as child of eve-log */
-    OutputRegisterTxSubModuleWithCondition(LOGGER_JSON_ARP,
-        "eve-log", "JsonArpLog", "eve-log.arp",
-        OutputArpLogInitSub, ALPROTO_ARP, JsonArpLogger,
-        JsonArpLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit, NULL);
-}
+// void JsonArpLogRegister(void)
+// {
+//     /* register as child of eve-log */
+//     OutputRegisterTxSubModuleWithCondition(LOGGER_JSON_ARP,
+//         "eve-log", "JsonArpLog", "eve-log.arp",
+//         OutputArpLogInitSub, ALPROTO_ARP, JsonArpLogger,
+//         JsonArpLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit, NULL);
+// }
 
 void JsonArpLogRegister (void)
 {
     OutputRegisterPacketSubModule(LOGGER_JSON_ARP, "eve-log", MODULE_NAME,
-        "eve-log.arp", JsonArpLogInitCtxSub, JsonArpLogger,
+        "eve-log.arp", NULL, JsonArpLogger,
         JsonArpLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit,
         NULL);
 }
