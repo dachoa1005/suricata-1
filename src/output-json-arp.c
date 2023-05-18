@@ -53,6 +53,8 @@
 #include "app-layer-template.h"
 #include "output-json-template.h"
 
+
+#define MODULE_NAME  "LogArpLog" 
 typedef struct OutputArpCtx_ {
     LogFileCtx *file_ctx;
     OutputJsonCommonSettings cfg;
@@ -197,7 +199,7 @@ static OutputInitResult OutputArpLogInitSub(ConfNode *conf, OutputCtx *parent_ct
     return result;
 }
 
-int ARPTxLogCondition(ThreadVars * tv, const Packet * p, void *state, void *tx, uint64_t tx_id)
+int JsonArpLogCondition(ThreadVars * tv, const Packet * p, void *state, void *tx, uint64_t tx_id)
 {
     return 1; // always log
 }
@@ -208,5 +210,13 @@ void JsonArpLogRegister(void)
     OutputRegisterTxSubModuleWithCondition(LOGGER_JSON_ARP,
         "eve-log", "JsonArpLog", "eve-log.arp",
         OutputArpLogInitSub, ALPROTO_ARP, JsonArpLogger,
-        ARPTxLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit, NULL);
+        JsonArpLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit, NULL);
+}
+
+void JsonArpLogRegister (void)
+{
+    OutputRegisterPacketSubModule(LOGGER_JSON_ARP, "eve-log", MODULE_NAME,
+        "eve-log.arp", JsonArpLogInitCtxSub, JsonArpLogger,
+        JsonArpLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit,
+        NULL);
 }
