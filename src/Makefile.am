@@ -89,6 +89,7 @@ decode-vxlan.c decode-vxlan.h \
 decode-vntag.c decode-vntag.h \
 decode-mpls.c decode-mpls.h \
 decode-template.c decode-template.h \
+decode-arp.c decode-arp.h \
 defrag-config.c defrag-config.h \
 defrag.c defrag.h \
 defrag-hash.c defrag-hash.h \

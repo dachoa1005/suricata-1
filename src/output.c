@@ -65,6 +65,7 @@
 #include "log-tcp-data.h"
 #include "log-stats.h"
 #include "output-json.h"
+#include "output-json-arp.h"
 #include "output-json-nfs.h"
 #include "output-json-ftp.h"
 #include "output-json-tftp.h"
@@ -1062,6 +1063,8 @@ void OutputRegisterLoggers(void)
     LogTlsLogRegister();
     JsonTlsLogRegister();
     LogTlsStoreRegister();
+    /* arp */
+    JsonArpLogRegister();
     /* ssh */
     JsonSshLogRegister();
     /* pcap log */

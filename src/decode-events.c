@@ -27,6 +27,12 @@
 /* code moved to app-layer-events */
 
 const struct DecodeEvents_ DEvents[] = {
+    /* ARP EVENTS */
+    {
+            "decoder.arp.pkt_too_small",
+            ARP_PKT_TOO_SMALL,
+    },
+    
     /* IPV4 EVENTS */
     {
             "decoder.ipv4.pkt_too_small",

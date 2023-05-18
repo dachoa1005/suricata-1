@@ -96,6 +96,7 @@ enum PktSrcEnum {
 #include "decode-vntag.h"
 #include "decode-vxlan.h"
 #include "decode-mpls.h"
+#include "decode-arp.h"
 
 #include "detect-reference.h"
 
@@ -566,6 +567,8 @@ typedef struct Packet_
 
     GREHdr *greh;
 
+    ARPHdr *arph;
+
     /* ptr to the payload of the packet
      * with it's length. */
     uint8_t *payload;
@@ -680,6 +683,7 @@ typedef struct DecodeThreadVars_
     uint16_t counter_udp;
     uint16_t counter_icmpv4;
     uint16_t counter_icmpv6;
+    uint16_t counter_arp;
 
     uint16_t counter_sll;
     uint16_t counter_raw;
@@ -1015,6 +1019,7 @@ int DecodeMPLS(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint
 int DecodeERSPAN(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 int DecodeERSPANTypeI(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 int DecodeCHDLC(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
+int DecodeARP(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 int DecodeTEMPLATE(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 
 #ifdef UNITTESTS
@@ -1315,6 +1320,7 @@ static inline bool DecodeNetworkLayer(ThreadVars *tv, DecodeThreadVars *dtv,
             DecodeIEEE8021ah(tv, dtv, p, data, len);
             break;
         case ETHERNET_TYPE_ARP:
+            DecodeARP(tv, dtv, p, data, len);
             break;
         case ETHERNET_TYPE_MPLS_UNICAST:
         case ETHERNET_TYPE_MPLS_MULTICAST:

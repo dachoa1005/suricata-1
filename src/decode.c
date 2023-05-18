@@ -529,6 +529,7 @@ void DecodeRegisterPerfCounters(DecodeThreadVars *dtv, ThreadVars *tv)
     dtv->counter_pkts = StatsRegisterCounter("decoder.pkts", tv);
     dtv->counter_bytes = StatsRegisterCounter("decoder.bytes", tv);
     dtv->counter_invalid = StatsRegisterCounter("decoder.invalid", tv);
+    dtv->counter_arp = StatsRegisterCounter("decoder.arp", tv);
     dtv->counter_ipv4 = StatsRegisterCounter("decoder.ipv4", tv);
     dtv->counter_ipv6 = StatsRegisterCounter("decoder.ipv6", tv);
     dtv->counter_eth = StatsRegisterCounter("decoder.ethernet", tv);
