@@ -43,6 +43,7 @@
 #include "util-buffer.h"
 #include "util-debug.h"
 #include "util-byte.h"
+#include "util-print.h"
 
 #include "output.h"
 #include "output-json.h"
@@ -51,155 +52,207 @@
 #include "app-layer-parser.h"
 
 #include "app-layer-template.h"
-#include "output-json-template.h"
+#include "output-json-arp.h"
 
-
-#define MODULE_NAME  "LogArpLog" 
-typedef struct OutputArpCtx_ {
+#define MODULE_NAME "LogArpLog"
+typedef struct ArpJsonOutputCtx_ {
     LogFileCtx *file_ctx;
     OutputJsonCommonSettings cfg;
-} OutputArpCtx;
+} ArpJsonOutputCtx;
 
 typedef struct JsonArpLogThread_ {
-    OutputArpCtx *arplog_ctx;
     LogFileCtx *file_ctx;
-    MemBuffer *buffer;
+    MemBuffer *json_buffer;
+    ArpJsonOutputCtx *json_output_ctx;
 } JsonArpLogThread;
 
-static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p,
-                         Flow *f, void *state, void *txptr, uint64_t tx_id)
+static void convertIPToString(const uint8_t *ip, char *ipString)
 {
-    JsonArpLogThread *alt = (JsonArpLogThread *)thread_data;
-    OutputArpCtx *arp_ctx = alt->arplog_ctx;
+    sprintf(ipString, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+}
 
-    if (unlikely(state == NULL)) {
-        return 0;
-    }
+static void convertMacToString(const uint8_t *mac, char *macString)
+{
+    sprintf(macString, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4],
+            mac[5]);
+}
 
-    JsonBuilder *js = CreateEveHeaderWithTxId(p, LOG_DIR_FLOW, "arp", NULL, tx_id);
-    if (unlikely(js == NULL))
-        return 0;
+static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
+{
+    JsonArpLogThread *aft = thread_data;
+    // ArpJsonOutputCtx *json_output_ctx = aft->json_output_ctx;
+    char timebuf[64];
+    char srcip[16] = { 0 }, desip[16] = { 0 };
+    char srcmac[18] = { 0 }, desmac[18] = { 0 };
+    CreateIsoTimeString(&p->ts, timebuf, sizeof(timebuf));
+    for (int i = 0; i < p->alerts.cnt; i++) {
+        MemBufferReset(aft->json_buffer);
 
-    EveAddCommonOptions(&arp_ctx->cfg, p, f, js);
-
-    /* reset */
-    MemBufferReset(alt->buffer);
-
-    jb_open_object(js, "arp");
-
-    /* Get MAC and IP addresses */
-    char src_mac[6];
-    char dst_mac[6];
-    char src_ip[4];
-    char dst_ip[4];
-
-    if (unlikely(p->flags & PKT_FLAG_ETHERNET)) {
-        EthernetHdr *eth_hdr = (EthernetHdr *)p->data;
-        if (unlikely(eth_hdr->type == ETHERTYPE_ARP)) {
-            ArpHdr *arp_hdr = (ArpHdr *)(p->data + sizeof(EthernetHdr));
-            FormatMacAddress(arp_hdr->src_mac, src_mac, sizeof(src_mac));
-            FormatMacAddress(arp_hdr->dst_mac, dst_mac, sizeof(dst_mac));
-            FormatIpAddress(arp_hdr->src_ip, src_ip, sizeof(src_ip));
-            FormatIpAddress(arp_hdr->dst_ip, dst_ip, sizeof(dst_ip));
-
-            jb_add_string(js, "src_mac", src_mac);
-            jb_add_string(js, "dst_mac", dst_mac);
-            jb_add_string(js, "src_ip", src_ip);
-            jb_add_string(js, "dst_ip", dst_ip);
+        JsonBuilder *jb = jb_new_object();
+        if (unlikely(jb == NULL)) {
+            return TM_ECODE_OK;
         }
+
+        // jb_set_string(jb, "timestamp", timebuf);
+    json_object_set_new(jb, "timestamp", json_string(timebuf));
+        jb_set_string(jb, "event_type", "arp");
+
+        convertIPToString(p->arph->arp_src_ip, srcip);
+        jb_set_string(jb, "src_ip", srcip);
+
+        convertIPToString(p->arph->arp_des_ip, desip);
+        jb_set_string(jb, "dst_ip", desip);
+
+        convertMacToString(p->arph->arp_src_mac, srcmac);
+        jb_set_string(jb, "src_mac", srcmac);
+
+        convertMacToString(p->arph->arp_des_mac, desmac);
+        jb_set_string(jb, "dst_mac", desmac);
+        jb_set_uint(jb, "operation", p->arph->arp_opcode);
+        jb_set_uint(jb, "hw_type", p->arph->arp_hw_type);
+        jb_set_uint(jb, "proto_type", p->arph->arp_proto_type);
+
+        jb_close(jb);
+
+        // size_t jslen = jb_len(jb);
+        // if (jslen == 0) {
+        //     jb_free(jb);
+        //     return TM_ECODE_OK;
+        // }
+
+        // if (MEMBUFFER_OFFSET(aft->json_buffer) + jslen > MEMBUFFER_SIZE(aft->json_buffer)) {
+        //     MemBufferExpand(aft->json_buffer, jslen);
+        // }
+
+        // MemBufferWriteRaw(aft->json_buffer, jb_ptr(jb), jslen);
+        // LogFileWrite(aft->file_ctx, aft->json_buffer);
+
+        OutputJsonBuilderBuffer(jb, aft->file_ctx, &aft->json_buffer);
+        jb_free(jb);
     }
-
-    jb_close(js);
-    OutputJsonBuilderBuffer(js, alt->file_ctx, &alt->buffer);
-
-    jb_free(js);
-    return 0;
+    return TM_ECODE_OK;
 }
 
 static TmEcode JsonArpLogThreadInit(ThreadVars *t, const void *initdata, void **data)
 {
+    JsonArpLogThread *aft = SCCalloc(1, sizeof(JsonArpLogThread));
+    if (unlikely(aft == NULL)) {
+        return TM_ECODE_FAILED;
+    }
+
     if (initdata == NULL) {
-        SCLogDebug("Error getting context for EveLogARP. \"initdata\" argument NULL");
-        return TM_ECODE_FAILED;
-    }
-
-    JsonArpLogThread *alt = SCCalloc(1, sizeof(JsonArpLogThread));
-    if (unlikely(alt == NULL))
-        return TM_ECODE_FAILED;
-
-    /* Use the Output Context (file pointer and mutex) */
-    alt->arplog_ctx = ((OutputCtx *)initdata)->data;
-
-    alt->buffer = MemBufferCreateNew(JSON_OUTPUT_BUFFER_SIZE);
-    if (alt->buffer == NULL) {
+        SCLogDebug("Error getting context for EveLogArp.  \"initdata\" argument NULL");
         goto error_exit;
     }
 
-    alt->file_ctx = LogFileEnsureExists(alt->arplog_ctx->file_ctx, t->id);
-    if (!alt->file_ctx) {
+    aft->json_buffer = MemBufferCreateNew(JSON_OUTPUT_BUFFER_SIZE);
+    if (aft->json_buffer == NULL) {
         goto error_exit;
     }
 
-    *data = (void *)alt;
+    ArpJsonOutputCtx *json_output_ctx = ((OutputCtx *)initdata)->data;
+    aft->file_ctx = LogFileEnsureExists(json_output_ctx->file_ctx, t->id);
+    if (aft->file_ctx == NULL) {
+        goto error_exit;
+    }
+    aft->json_output_ctx = json_output_ctx;
+
+    *data = (void *)aft;
     return TM_ECODE_OK;
 
 error_exit:
-    if (alt->buffer != NULL) {
-        MemBufferFree(alt->buffer);
+    if (aft->json_buffer != NULL) {
+        MemBufferFree(aft->json_buffer);
     }
-    SCFree(alt);
+    SCFree(aft);
     return TM_ECODE_FAILED;
 }
 
 static TmEcode JsonArpLogThreadDeinit(ThreadVars *t, void *data)
 {
-    JsonArpLogThread *alt = (JsonArpLogThread *)data;
-    if (alt == NULL) {
+    JsonArpLogThread *aft = (JsonArpLogThread *)data;
+    if (aft == NULL) {
         return TM_ECODE_OK;
     }
 
-    MemBufferFree(alt->buffer);
-    /* clear memory */
-    memset(alt, 0, sizeof(JsonArpLogThread));
+    MemBufferFree(aft->json_buffer);
 
-    SCFree(alt);
+    /* clear memory */
+    memset(aft, 0, sizeof(JsonArpLogThread));
+
+    SCFree(aft);
     return TM_ECODE_OK;
 }
 
-static void OutputArpLogDeinitSub(OutputCtx *output_ctx)
+// static void OutputArpLogDeinitSub(OutputCtx *output_ctx)
+// {
+
+// }
+
+// static OutputInitResult OutputArpLogInitSub(ConfNode *conf, OutputCtx *parent_ctx)
+// {
+
+// }
+static void JsonArpLogDeInitCtxSubHelper(OutputCtx *output_ctx)
 {
-    OutputArpCtx *arp_ctx = output_ctx->data;
-    SCFree(arp_ctx);
+    SCLogDebug("cleaning up sub output_ctx %p", output_ctx);
+
+    ArpJsonOutputCtx *json_output_ctx = (ArpJsonOutputCtx *)output_ctx->data;
+    if (json_output_ctx != NULL) {
+        SCFree(json_output_ctx);
+    }
     SCFree(output_ctx);
 }
-
-static OutputInitResult OutputArpLogInitSub(ConfNode *conf, OutputCtx *parent_ctx)
+static OutputInitResult JsonArpLogInitCtxHelper(ConfNode *conf, OutputCtx *parent_ctx)
 {
     OutputInitResult result = { NULL, false };
-    OutputJsonCtx *ojc = parent_ctx->data;
-
-    OutputArpCtx *arp_ctx = SCMalloc(sizeof(OutputArpCtx));
-    if (unlikely(arp_ctx == NULL))
-        return result;
+    OutputJsonCtx *ajt = parent_ctx->data;
+    ArpJsonOutputCtx *json_output_ctx = NULL;
 
     OutputCtx *output_ctx = SCCalloc(1, sizeof(OutputCtx));
     if (unlikely(output_ctx == NULL)) {
-        SCFree(arp_ctx);
         return result;
     }
 
-    arp_ctx->file_ctx = ojc->file_ctx;
-    arp_ctx->cfg = ojc->cfg;
+    json_output_ctx = SCCalloc(1, sizeof(ArpJsonOutputCtx));
+    if (unlikely(json_output_ctx == NULL)) {
+        goto error;
+    }
 
-    output_ctx->data = arp_ctx;
-    output_ctx->DeInit = OutputArpLogDeinitSub;
+    memset(json_output_ctx, 0, sizeof(ArpJsonOutputCtx));
+
+    json_output_ctx->file_ctx = ajt->file_ctx;
+    json_output_ctx->cfg = ajt->cfg;
+
+    output_ctx->data = json_output_ctx;
+    output_ctx->DeInit = JsonArpLogDeInitCtxSubHelper;
 
     result.ctx = output_ctx;
     result.ok = true;
+
+    return result;
+
+error:
+    if (json_output_ctx != NULL) {
+        SCFree(json_output_ctx);
+    }
+    if (output_ctx != NULL) {
+        SCFree(output_ctx);
+    }
+
     return result;
 }
 
-int JsonArpLogCondition(ThreadVars * tv, const Packet * p, void *state, void *tx, uint64_t tx_id)
+static OutputInitResult JsonArpLogInitCtxSub(ConfNode *conf, OutputCtx *parent_ctx)
+{
+    OutputInitResult result = JsonArpLogInitCtxHelper(conf, parent_ctx);
+    if (result.ok) {
+        // printf("ok\n");
+        result.ctx->DeInit = JsonArpLogDeInitCtxSubHelper;
+    }
+}
+
+static int JsonArpLogCondition(ThreadVars *tv, const Packet *p)
 {
     return 1; // always log
 }
@@ -213,10 +266,9 @@ int JsonArpLogCondition(ThreadVars * tv, const Packet * p, void *state, void *tx
 //         JsonArpLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit, NULL);
 // }
 
-void JsonArpLogRegister (void)
+void JsonArpLogRegister(void)
 {
-    OutputRegisterPacketSubModule(LOGGER_JSON_ARP, "eve-log", MODULE_NAME,
-        "eve-log.arp", NULL, JsonArpLogger,
-        JsonArpLogCondition, JsonArpLogThreadInit, JsonArpLogThreadDeinit,
-        NULL);
+    OutputRegisterPacketSubModule(LOGGER_JSON_ARP, "eve-log", MODULE_NAME, "eve-log.arp",
+            JsonArpLogInitCtxSub, JsonArpLogger, JsonArpLogCondition, JsonArpLogThreadInit,
+            JsonArpLogThreadDeinit, NULL);
 }

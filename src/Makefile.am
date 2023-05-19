@@ -366,6 +366,7 @@ output-file.c output-file.h \
 output-filedata.c output-filedata.h \
 output-filestore.c output-filestore.h \
 output-flow.c output-flow.h \
+output-json-arp.c out-json-arp.h \
 output-json-alert.c output-json-alert.h \
 output-json-anomaly.c output-json-anomaly.h \
 output-json-dns.c output-json-dns.h \
