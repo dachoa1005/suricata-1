@@ -54,6 +54,8 @@
 #include "app-layer-template.h"
 #include "output-json-arp.h"
 
+#include <arpa/inet.h>
+
 #define MODULE_NAME "LogArpLog"
 typedef struct ArpJsonOutputCtx_ {
     LogFileCtx *file_ctx;
@@ -69,6 +71,7 @@ typedef struct JsonArpLogThread_ {
 static void convertIPToString(const uint8_t *ip, char *ipString)
 {
     sprintf(ipString, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+    SCLogNotice("%s", ipString);
 }
 
 static void convertMacToString(const uint8_t *mac, char *macString)
@@ -85,51 +88,55 @@ static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
     char srcip[16] = { 0 }, desip[16] = { 0 };
     char srcmac[18] = { 0 }, desmac[18] = { 0 };
     CreateIsoTimeString(&p->ts, timebuf, sizeof(timebuf));
-    for (int i = 0; i < p->alerts.cnt; i++) {
-        MemBufferReset(aft->json_buffer);
+    
+    // for (int i = 0; i < p->alerts.cnt; i++) {
 
-        JsonBuilder *jb = jb_new_object();
-        if (unlikely(jb == NULL)) {
-            return TM_ECODE_OK;
-        }
-
-        // jb_set_string(jb, "timestamp", timebuf);
-    json_object_set_new(jb, "timestamp", json_string(timebuf));
-        jb_set_string(jb, "event_type", "arp");
-
-        convertIPToString(p->arph->arp_src_ip, srcip);
-        jb_set_string(jb, "src_ip", srcip);
-
-        convertIPToString(p->arph->arp_des_ip, desip);
-        jb_set_string(jb, "dst_ip", desip);
-
-        convertMacToString(p->arph->arp_src_mac, srcmac);
-        jb_set_string(jb, "src_mac", srcmac);
-
-        convertMacToString(p->arph->arp_des_mac, desmac);
-        jb_set_string(jb, "dst_mac", desmac);
-        jb_set_uint(jb, "operation", p->arph->arp_opcode);
-        jb_set_uint(jb, "hw_type", p->arph->arp_hw_type);
-        jb_set_uint(jb, "proto_type", p->arph->arp_proto_type);
-
-        jb_close(jb);
-
-        // size_t jslen = jb_len(jb);
-        // if (jslen == 0) {
-        //     jb_free(jb);
-        //     return TM_ECODE_OK;
-        // }
-
-        // if (MEMBUFFER_OFFSET(aft->json_buffer) + jslen > MEMBUFFER_SIZE(aft->json_buffer)) {
-        //     MemBufferExpand(aft->json_buffer, jslen);
-        // }
-
-        // MemBufferWriteRaw(aft->json_buffer, jb_ptr(jb), jslen);
-        // LogFileWrite(aft->file_ctx, aft->json_buffer);
-
-        OutputJsonBuilderBuffer(jb, aft->file_ctx, &aft->json_buffer);
-        jb_free(jb);
+    JsonBuilder *jb = jb_new_object();
+    if (unlikely(jb == NULL)) {
+        return TM_ECODE_OK;
     }
+
+    jb_set_string(jb, "timestamp", timebuf);
+    // json_object_set_new(jb, "timestamp", json_string(timebuf));
+    jb_set_string(jb, "event_type", "arp");
+
+    MemBufferReset(aft->json_buffer);
+
+    jb_open_object(jb, "arp");
+
+    convertIPToString(p->arph->arp_src_ip, srcip);
+    jb_set_string(jb, "src_ip", srcip);
+    SCLogNotice("arp log: %s", timebuf);
+
+    convertIPToString(p->arph->arp_des_ip, desip);
+    jb_set_string(jb, "dst_ip", desip);
+
+    convertMacToString(p->arph->arp_src_mac, srcmac);
+    jb_set_string(jb, "src_mac", srcmac);
+
+    convertMacToString(p->arph->arp_des_mac, desmac);
+    jb_set_string(jb, "dst_mac", desmac);
+    jb_set_uint(jb, "operation", ntohs(p->arph->arp_opcode));
+    jb_set_uint(jb, "hw_type", ntohs(p->arph->arp_hw_type));
+    jb_set_uint(jb, "proto_type", p->arph->arp_proto_type);
+
+    jb_close(jb);
+
+    // size_t jslen = jb_len(jb);
+    // if (jslen == 0) {
+    //     jb_free(jb);
+    //     return TM_ECODE_OK;
+    // }
+
+    // if (MEMBUFFER_OFFSET(aft->json_buffer) + jslen > MEMBUFFER_SIZE(aft->json_buffer)) {
+    //     MemBufferExpand(aft->json_buffer, jslen);
+    // }
+
+    // MemBufferWriteRaw(aft->json_buffer, jb_ptr(jb), jslen);
+    // LogFileWrite(aft->file_ctx, aft->json_buffer);
+    OutputJsonBuilderBuffer(jb, aft->file_ctx, &aft->json_buffer);
+    jb_free(jb);
+
     return TM_ECODE_OK;
 }
 
@@ -250,11 +257,15 @@ static OutputInitResult JsonArpLogInitCtxSub(ConfNode *conf, OutputCtx *parent_c
         // printf("ok\n");
         result.ctx->DeInit = JsonArpLogDeInitCtxSubHelper;
     }
+
+    return result;
 }
 
 static int JsonArpLogCondition(ThreadVars *tv, const Packet *p)
 {
-    return 1; // always log
+    if (p->arph)
+        return TRUE; 
+    return FALSE;
 }
 
 // void JsonArpLogRegister(void)
@@ -268,6 +279,7 @@ static int JsonArpLogCondition(ThreadVars *tv, const Packet *p)
 
 void JsonArpLogRegister(void)
 {
+    SCLogNotice("JsonArpLogRegister");
     OutputRegisterPacketSubModule(LOGGER_JSON_ARP, "eve-log", MODULE_NAME, "eve-log.arp",
             JsonArpLogInitCtxSub, JsonArpLogger, JsonArpLogCondition, JsonArpLogThreadInit,
             JsonArpLogThreadDeinit, NULL);
