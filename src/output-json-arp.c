@@ -99,31 +99,26 @@ static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
     jb_set_string(jb, "timestamp", timebuf);
     // json_object_set_new(jb, "timestamp", json_string(timebuf));
     jb_set_string(jb, "event_type", "arp");
-    SCLogNotice("1");
+
     MemBufferReset(aft->json_buffer);
 
     jb_open_object(jb, "arp");
-    SCLogNotice("1");
 
     convertIPToString(p->arph->arp_src_ip, srcip);
     jb_set_string(jb, "src_ip", srcip);
     SCLogNotice("arp log: %s", timebuf);
-    SCLogNotice("1");
 
     convertIPToString(p->arph->arp_des_ip, desip);
     jb_set_string(jb, "dst_ip", desip);
-    SCLogNotice("1");
 
     convertMacToString(p->arph->arp_src_mac, srcmac);
     jb_set_string(jb, "src_mac", srcmac);
-    SCLogNotice("1");
 
     convertMacToString(p->arph->arp_des_mac, desmac);
     jb_set_string(jb, "dst_mac", desmac);
     jb_set_uint(jb, "operation", ntohs(p->arph->arp_opcode));
     jb_set_uint(jb, "hw_type", ntohs(p->arph->arp_hw_type));
     jb_set_uint(jb, "proto_type", p->arph->arp_proto_type);
-    SCLogNotice("1");
 
     jb_close(jb);
 
