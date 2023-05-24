@@ -44,8 +44,8 @@ static int DetectArpMatch (DetectEngineThreadCtx *,
         Packet *, const Signature *, const SigMatchCtx *);
 static int DetectArpSetup (DetectEngineCtx *, Signature *, const char *);
 static void DetectArpFree (DetectEngineCtx *, void *);
-static bool PrefilterArpIsPrefilterable(const Signature *s);
-static int PrefilterSetupArp(DetectEngineCtx *de_ctx, SigGroupHead *sgh);
+// static bool PrefilterArpIsPrefilterable(const Signature *s);
+// static int PrefilterSetupArp(DetectEngineCtx *de_ctx, SigGroupHead *sgh);
 
 
 #ifdef UNITTESTS
@@ -54,17 +54,17 @@ static void DetectArpRegisterTests (void);
 
 
 void DetectArpRegister(void) {
-    sigmatch_table[DETECT_ARP].name = "ip.arp";
-    sigmatch_table[DETECT_ARP].alias = "arp";
-    // SCLogNotice("Registering arp_opcode");
+    sigmatch_table[DETECT_ARP].name = "arp";
+    sigmatch_table[DETECT_ARP].alias = "arp_opcode";
     sigmatch_table[DETECT_ARP].desc = "give an introduction into how a detection module works";
     sigmatch_table[DETECT_ARP].url = "https://redmine.openinfosecfoundation.org/projects/suricata/wiki/Suricata_Developers_Guide";
     sigmatch_table[DETECT_ARP].Match = DetectArpMatch;
     sigmatch_table[DETECT_ARP].Setup = DetectArpSetup;
     sigmatch_table[DETECT_ARP].Free = DetectArpFree;
+    SCLogNotice("Registering arp_opcode");
 
-    sigmatch_table[DETECT_ARP].SupportsPrefilter = PrefilterArpIsPrefilterable;
-    sigmatch_table[DETECT_ARP].SetupPrefilter = PrefilterSetupArp;
+    // sigmatch_table[DETECT_ARP].SupportsPrefilter = PrefilterArpIsPrefilterable;
+    // sigmatch_table[DETECT_ARP].SetupPrefilter = PrefilterSetupArp;
 #ifdef UNITTESTS
     /* registers unittests into the system */
     sigmatch_table[DETECT_ARP].RegisterTests = DetectArpRegisterTests;
@@ -95,7 +95,8 @@ static int DetectArpMatch (DetectEngineThreadCtx *det_ctx, Packet *p,
         return 0;
     }
     SCLogNotice("ARP match");
-    return (data->arp_opcode == (uint16_t)ntohl(p->arph->arp_opcode)) ? 1 : 0;
+    // return (data->arp_opcode == (uint16_t)ntohl(p->arph->arp_opcode)) ? 1 : 0;
+    return 1; 
 }
 
 /**
@@ -116,13 +117,14 @@ static int DetectArpSetup (DetectEngineCtx *de_ctx, Signature *s, const char *ar
 
     data = SCMalloc(sizeof(DetectArpData));
     if (unlikely(data == NULL)) {
-        return -1;
+        SCLogNotice("Packet NULL");
+        goto error;
     }
     
     sm = SigMatchAlloc();
     if (unlikely(sm == NULL)) {
         SCFree(data);
-        return -1;
+        goto error;
     }
 
     sm->type = DETECT_ARP;
@@ -130,7 +132,7 @@ static int DetectArpSetup (DetectEngineCtx *de_ctx, Signature *s, const char *ar
     if (StringParseUint16(&data->arp_opcode, 10, 0,arpstr) < 0)
     {
         SCFree(data);
-        return -1;
+        goto error;
     }
     SCLogNotice("%d", data->arp_opcode);
 
@@ -140,6 +142,13 @@ static int DetectArpSetup (DetectEngineCtx *de_ctx, Signature *s, const char *ar
     s->flags |= SIG_FLAG_REQUIRE_PACKET;
 
     return 0;
+
+error:
+    if (data)
+        SCFree(data);
+    if (sm)
+        SigMatchFree(de_ctx, sm);
+    return -1;
 }
 
 /**
@@ -156,54 +165,54 @@ static void DetectArpFree(DetectEngineCtx *de_ctx, void *ptr)
 }
 
 
-static bool PrefilterArpIsPrefilterable(const Signature *s)
-{
-    const SigMatch *sm;
-    for (sm = s->init_data->smlists[DETECT_SM_LIST_MATCH] ; sm != NULL; sm = sm->next) {
-        switch (sm->type) {
-            case DETECT_ARP:
-                return TRUE;
-        }
-    }
-    return FALSE;
-}
+// static bool PrefilterArpIsPrefilterable(const Signature *s)
+// {
+//     const SigMatch *sm;
+//     for (sm = s->init_data->smlists[DETECT_SM_LIST_MATCH] ; sm != NULL; sm = sm->next) {
+//         switch (sm->type) {
+//             case DETECT_ARP:
+//                 return TRUE;
+//         }
+//     }
+//     return FALSE;
+// }
 
-static void PrefilterPacketArpSet(PrefilterPacketHeaderValue *v, void *smctx)
-{
-    const DetectArpData *a = smctx;
-    v->u16[0] = a->arp_opcode;
-}
+// static void PrefilterPacketArpSet(PrefilterPacketHeaderValue *v, void *smctx)
+// {
+//     const DetectArpData *a = smctx;
+//     v->u16[0] = a->arp_opcode;
+// }
 
-static bool PrefilterPacketArpCompare(PrefilterPacketHeaderValue v, void *smctx)
-{
-    const DetectArpData *a = smctx;
-    if (v.u32[0] == a->arp_opcode)
-        return TRUE;
-    return FALSE;
-}
+// static bool PrefilterPacketArpCompare(PrefilterPacketHeaderValue v, void *smctx)
+// {
+//     const DetectArpData *a = smctx;
+//     if (v.u32[0] == a->arp_opcode)
+//         return TRUE;
+//     return FALSE;
+// }
 
-static void PrefilterPacketArpMatch(DetectEngineThreadCtx *det_ctx, Packet *p, const void *pectx)
-{
-    const PrefilterPacketHeaderCtx *ctx = pectx;
+// static void PrefilterPacketArpMatch(DetectEngineThreadCtx *det_ctx, Packet *p, const void *pectx)
+// {
+//     const PrefilterPacketHeaderCtx *ctx = pectx;
 
-    if (PrefilterPacketHeaderExtraMatch(ctx, p) == FALSE)
-        return;
+//     if (PrefilterPacketHeaderExtraMatch(ctx, p) == FALSE)
+//         return;
 
-    if (p->arph != NULL)
-    {
-        // SCLogDebug("packet matches TCP ack %u", ctx->v1.u32[0]);
-        PrefilterAddSids(&det_ctx->pmq, ctx->sigs_array, ctx->sigs_cnt);
-    }
-}
+//     if (p->arph != NULL)
+//     {
+//         // SCLogDebug("packet matches TCP ack %u", ctx->v1.u32[0]);
+//         PrefilterAddSids(&det_ctx->pmq, ctx->sigs_array, ctx->sigs_cnt);
+//     }
+// }
 
 
-static int PrefilterSetupArp(DetectEngineCtx *de_ctx, SigGroupHead *sgh)
-{
-    return PrefilterSetupPacketHeader(de_ctx, sgh, DETECT_ARP,
-        PrefilterPacketArpSet,
-        PrefilterPacketArpCompare,
-        PrefilterPacketArpMatch);
-}
+// static int PrefilterSetupArp(DetectEngineCtx *de_ctx, SigGroupHead *sgh)
+// {
+//     return PrefilterSetupPacketHeader(de_ctx, sgh, DETECT_ARP,
+//         PrefilterPacketArpSet,
+//         PrefilterPacketArpCompare,
+//         PrefilterPacketArpMatch);
+// }
 
 #ifdef UNITTESTS
 #include "tests/detect-arp.c"
