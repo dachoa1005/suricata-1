@@ -90,6 +90,9 @@ enum {
     IPV6_UNKNOWN_NEXT_HEADER, /**< unknown/unsupported next header */
     IPV6_WITH_ICMPV4,         /**< IPv6 packet with ICMPv4 header */
 
+    /* ARP EVENTS */
+    ARP_PKT_TOO_SMALL, /**< arp packet smaller than minimum size */
+
     /* TCP EVENTS */
     TCP_PKT_TOO_SMALL,  /**< tcp packet smaller than minimum size */
     TCP_HLEN_TOO_SMALL, /**< tcp header smaller than minimum size */
@@ -284,8 +287,7 @@ enum {
     DECODE_EVENT_MAX,
 };
 
-#define EVENT_IS_DECODER_PACKET_ERROR(e)    \
-    ((e) < (DECODE_EVENT_PACKET_MAX))
+#define EVENT_IS_DECODER_PACKET_ERROR(e) ((e) < (DECODE_EVENT_PACKET_MAX))
 
 /* supported decoder events */
 

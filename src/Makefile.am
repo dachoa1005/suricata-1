@@ -89,6 +89,7 @@ decode-vxlan.c decode-vxlan.h \
 decode-vntag.c decode-vntag.h \
 decode-mpls.c decode-mpls.h \
 decode-template.c decode-template.h \
+decode-arp.c decode-arp.h \
 defrag-config.c defrag-config.h \
 defrag.c defrag.h \
 defrag-hash.c defrag-hash.h \
@@ -366,6 +367,7 @@ output-filedata.c output-filedata.h \
 output-filestore.c output-filestore.h \
 output-flow.c output-flow.h \
 output-json-alert.c output-json-alert.h \
+output-json-arp.c output-json-arp.h \
 output-json-anomaly.c output-json-anomaly.h \
 output-json-dns.c output-json-dns.h \
 output-json-dnp3.c output-json-dnp3.h \

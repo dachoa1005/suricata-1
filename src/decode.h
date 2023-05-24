@@ -96,6 +96,7 @@ enum PktSrcEnum {
 #include "decode-vntag.h"
 #include "decode-vxlan.h"
 #include "decode-mpls.h"
+#include "decode-arp.h"
 
 #include "detect-reference.h"
 
@@ -550,6 +551,8 @@ typedef struct Packet_
 #define icmpv4vars  l4vars.icmpv4vars
 #define icmpv6vars  l4vars.icmpv6vars
 
+    ARPHdr *arph;
+
     TCPHdr *tcph;
 
     UDPHdr *udph;
@@ -680,6 +683,7 @@ typedef struct DecodeThreadVars_
     uint16_t counter_udp;
     uint16_t counter_icmpv4;
     uint16_t counter_icmpv6;
+    uint16_t counter_arp;
 
     uint16_t counter_sll;
     uint16_t counter_raw;
@@ -1015,6 +1019,7 @@ int DecodeMPLS(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint
 int DecodeERSPAN(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 int DecodeERSPANTypeI(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 int DecodeCHDLC(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
+int DecodeARP(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 int DecodeTEMPLATE(ThreadVars *, DecodeThreadVars *, Packet *, const uint8_t *, uint32_t);
 
 #ifdef UNITTESTS
