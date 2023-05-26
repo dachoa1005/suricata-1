@@ -20,9 +20,9 @@ int DecodeARP(ThreadVars *tv, DecodeThreadVars *dtv, Packet *p,
 
     SCLogDebug("pkt %p len %"PRIu32"", pkt, len);
 
-    if (!PacketIncreaseCheckLayers(p)) {
-        return TM_ECODE_FAILED;
-    }
+    // if (!PacketIncreaseCheckLayers(p)) {
+    //     return TM_ECODE_FAILED;
+    // }
 
     if (unlikely(len < ARP_HEADER_LEN)) {
         ENGINE_SET_INVALID_EVENT(p, ARP_PKT_TOO_SMALL);
@@ -30,6 +30,7 @@ int DecodeARP(ThreadVars *tv, DecodeThreadVars *dtv, Packet *p,
     }
 
     p->arph = (ARPHdr *)pkt;
+    // p->payload = NULL;
 
     // printf("test\n");
 
@@ -45,5 +46,8 @@ int DecodeARP(ThreadVars *tv, DecodeThreadVars *dtv, Packet *p,
     p->arph->arp_des_mac[5], p->arph->arp_des_ip[0], p->arph->arp_des_ip[1],
     p->arph->arp_des_ip[2], p->arph->arp_des_ip[3]);
 
+    printf("ARP opcode: %d\n", ntohs(p->arph->arp_opcode));
+
+    printf("ARP proto size: %d\n", p->arph->arp_proto_size);
     return TM_ECODE_OK;
 }

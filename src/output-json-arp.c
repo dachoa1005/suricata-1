@@ -56,7 +56,7 @@
 
 #include <arpa/inet.h>
 
-#define MODULE_NAME "LogArpLog"
+#define MODULE_NAME "JsonArpLog"
 typedef struct ArpJsonOutputCtx_ {
     LogFileCtx *file_ctx;
     OutputJsonCommonSettings cfg;
@@ -71,7 +71,7 @@ typedef struct JsonArpLogThread_ {
 static void convertIPToString(const uint8_t *ip, char *ipString)
 {
     sprintf(ipString, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-    SCLogNotice("%s", ipString);
+    // SCLogNotice("%s", ipString);
 }
 
 static void convertMacToString(const uint8_t *mac, char *macString)
@@ -89,6 +89,7 @@ static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
     char srcmac[18] = { 0 }, desmac[18] = { 0 };
     CreateIsoTimeString(&p->ts, timebuf, sizeof(timebuf));
     
+    // SCLogNotice("arp log: %s", timebuf);
     // for (int i = 0; i < p->alerts.cnt; i++) {
 
     JsonBuilder *jb = jb_new_object();
@@ -106,7 +107,7 @@ static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
 
     convertIPToString(p->arph->arp_src_ip, srcip);
     jb_set_string(jb, "src_ip", srcip);
-    SCLogNotice("arp log: %s", timebuf);
+    // SCLogNotice("arp log: %s", timebuf);
 
     convertIPToString(p->arph->arp_des_ip, desip);
     jb_set_string(jb, "dst_ip", desip);
@@ -279,7 +280,7 @@ static int JsonArpLogCondition(ThreadVars *tv, const Packet *p)
 
 void JsonArpLogRegister(void)
 {
-    SCLogNotice("JsonArpLogRegister");
+    // SCLogNotice("JsonArpLogRegister");
     OutputRegisterPacketSubModule(LOGGER_JSON_ARP, "eve-log", MODULE_NAME, "eve-log.arp",
             JsonArpLogInitCtxSub, JsonArpLogger, JsonArpLogCondition, JsonArpLogThreadInit,
             JsonArpLogThreadDeinit, NULL);

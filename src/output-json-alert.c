@@ -733,6 +733,7 @@ static int AlertJsonDecoderEvent(ThreadVars *tv, JsonAlertLogThread *aft, const 
     if (p->alerts.cnt == 0)
         return TM_ECODE_OK;
 
+    // SCLogNotice("Alert count: %d", p->alerts.cnt);
     CreateIsoTimeString(&p->ts, timebuf, sizeof(timebuf));
 
     for (int i = 0; i < p->alerts.cnt; i++) {
