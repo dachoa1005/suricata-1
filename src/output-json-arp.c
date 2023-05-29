@@ -105,21 +105,24 @@ static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
 
     jb_open_object(jb, "arp");
 
-    convertIPToString(p->arph->arp_src_ip, srcip);
-    jb_set_string(jb, "src_ip", srcip);
-    // SCLogNotice("arp log: %s", timebuf);
-
-    convertIPToString(p->arph->arp_des_ip, desip);
-    jb_set_string(jb, "dst_ip", desip);
+    jb_set_uint(jb, "hw_type", ntohs(p->arph->arp_hw_type));
+    jb_set_uint(jb, "proto_type", p->arph->arp_proto_type);
+    jb_set_uint(jb, "hw_size", p->arph->arp_hw_size);
+    jb_set_uint(jb, "proto_size", p->arph->arp_proto_size);
+    jb_set_uint(jb, "operation", ntohs(p->arph->arp_opcode));
 
     convertMacToString(p->arph->arp_src_mac, srcmac);
     jb_set_string(jb, "src_mac", srcmac);
 
+    convertIPToString(p->arph->arp_src_ip, srcip);
+    jb_set_string(jb, "src_ip", srcip);
+    // SCLogNotice("arp log: %s", timebuf);
+
     convertMacToString(p->arph->arp_des_mac, desmac);
     jb_set_string(jb, "dst_mac", desmac);
-    jb_set_uint(jb, "operation", ntohs(p->arph->arp_opcode));
-    jb_set_uint(jb, "hw_type", ntohs(p->arph->arp_hw_type));
-    jb_set_uint(jb, "proto_type", p->arph->arp_proto_type);
+
+    convertIPToString(p->arph->arp_des_ip, desip);
+    jb_set_string(jb, "dst_ip", desip);
 
     jb_close(jb);
 

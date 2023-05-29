@@ -102,16 +102,18 @@ static int DetectArpMatch(
                    "%02x:%02x:%02x:%02x:%02x:%02x TPA: %u.%u.%u.%u\n",
                     p->arph->arp_src_mac[0], p->arph->arp_src_mac[1], p->arph->arp_src_mac[2],
                     p->arph->arp_src_mac[3], p->arph->arp_src_mac[4], p->arph->arp_src_mac[5],
-                    p->arph->arp_src_ip[0], p->arph->arp_src_ip[1], p->arph->arp_src_ip[2],
-                    p->arph->arp_src_ip[3], p->arph->arp_des_mac[0], p->arph->arp_des_mac[1],
-                    p->arph->arp_des_mac[2], p->arph->arp_des_mac[3], p->arph->arp_des_mac[4],
-                    p->arph->arp_des_mac[5], p->arph->arp_des_ip[0], p->arph->arp_des_ip[1],
+                    p->arph->arp_src_ip[0], p->arph->arp_src_ip[1], 
+                    p->arph->arp_src_ip[2], p->arph->arp_src_ip[3], 
+                    p->arph->arp_des_mac[0], p->arph->arp_des_mac[1],p->arph->arp_des_mac[2], 
+                    p->arph->arp_des_mac[3], p->arph->arp_des_mac[4],p->arph->arp_des_mac[5], 
+                    p->arph->arp_des_ip[0], p->arph->arp_des_ip[1],
                     p->arph->arp_des_ip[2], p->arph->arp_des_ip[3]);
             // return (data->arp_opcode ==(uint16_t)ntohs(p->arph->arp_opcode)) ? 1 : 0;
 
             return 1;
         }
     }
+    SCLogNotice("Not ARP packet");
     return 0;
 }
 
@@ -150,10 +152,10 @@ static int DetectArpSetup(DetectEngineCtx *de_ctx, Signature *s, const char *arp
         // SCFree(data);
         goto error;
     }
-    SCLogNotice("%d", data->arp_opcode);
+    // SCLogNotice("%d", data->arp_opcode);
 
     sm->ctx = (SigMatchCtx *)data;
-    SCLogNotice("sm->ctx->foo: %d\n", sm->ctx->foo);
+    // SCLogNotice("sm->ctx->foo: %d\n", sm->ctx->foo);
 
     SigMatchAppendSMToList(s, sm, DETECT_SM_LIST_MATCH);
     s->flags |= SIG_FLAG_REQUIRE_PACKET;
