@@ -33,6 +33,9 @@
 
 #include "detect-arp.h"
 
+int i=0;
+
+
 /**
  * \brief Regex for parsing our keyword options
  */
@@ -63,6 +66,7 @@ void DetectArpRegister(void)
     sigmatch_table[DETECT_ARP].Match = DetectArpMatch;
     sigmatch_table[DETECT_ARP].Setup = DetectArpSetup;
     sigmatch_table[DETECT_ARP].Free = DetectArpFree;
+    // sigmatch_table[DETECT_ARP].flags |= SIGMATCH_DEONLY_COMPAT;
     // SCLogNotice("Registering arp_opcode");
 
     // sigmatch_table[DETECT_ARP].SupportsPrefilter = PrefilterArpIsPrefilterable;
@@ -91,13 +95,14 @@ static int DetectArpMatch(
 {
     // int ret = 0;
     // const DetectArpData *data = (const DetectArpData *) ctx;
-
     /* packet payload access */
     // SCLogNotice("test");
     if (p->arph != NULL) {
-        if (ntohs(p->arph->arp_opcode) == 1 || ntohs(p->arph->arp_opcode) == 2) {
-            SCLogNotice("ARP packet match");
+        // if (ntohs(p->arph->arp_opcode) == 1 || ntohs(p->arph->arp_opcode) == 2) {
+            SCLogNotice("%d: ARP packet match", i);
+            i++;
             // SCLogNotice("Not ARP packet");
+            printf ("detect-arp.c, ");
             printf("ARP: SHA: %02x:%02x:%02x:%02x:%02x:%02x SPA: %u.%u.%u.%u -> THA: "
                    "%02x:%02x:%02x:%02x:%02x:%02x TPA: %u.%u.%u.%u\n",
                     p->arph->arp_src_mac[0], p->arph->arp_src_mac[1], p->arph->arp_src_mac[2],
@@ -111,9 +116,10 @@ static int DetectArpMatch(
             // return (data->arp_opcode ==(uint16_t)ntohs(p->arph->arp_opcode)) ? 1 : 0;
 
             return 1;
-        }
+        // }
     }
-    SCLogNotice("Not ARP packet");
+    // SCLogNotice("%d: Not ARP packet", i);
+    i++;
     return 0;
 }
 
@@ -136,7 +142,7 @@ static int DetectArpSetup(DetectEngineCtx *de_ctx, Signature *s, const char *arp
 
     data = SCMalloc(sizeof(DetectArpData));
     if (unlikely(data == NULL)) {
-        SCLogNotice("Packet NULL");
+        // SCLogNotice("Packet NULL");
         goto error;
     }
 
@@ -178,8 +184,7 @@ error:
 static void DetectArpFree(DetectEngineCtx *de_ctx, void *ptr)
 {
     DetectArpData *arpd = (DetectArpData *)ptr;
-
-    /* do more specific cleanup here, if needed */
+  /* do more specific cleanup here, if needed */
     SCFree(arpd);
 }
 
