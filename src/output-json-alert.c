@@ -601,14 +601,14 @@ static void AlertAddFiles(const Packet *p, JsonBuilder *jb, const uint64_t tx_id
 
 static int AlertJson(ThreadVars *tv, JsonAlertLogThread *aft, const Packet *p)
 {
-    printf("AlertJson\n");
+    // printf("AlertJson\n");
     MemBuffer *payload = aft->payload_buffer;
     AlertJsonOutputCtx *json_output_ctx = aft->json_output_ctx;
 
     if (p->alerts.cnt == 0 && !(p->flags & PKT_HAS_TAG))
         return TM_ECODE_OK;
 
-    SCLogNotice("Alert count: %d", p->alerts.cnt);
+    // SCLogNotice("Alert count: %d", p->alerts.cnt);
     for (int i = 0; i < p->alerts.cnt; i++) {
         const PacketAlert *pa = &p->alerts.alerts[i];
         if (unlikely(pa->s == NULL)) {
@@ -769,7 +769,7 @@ static void convertMacToString(const uint8_t *mac, char *macString)
 
 static int AlertJsonDecoderEvent(ThreadVars *tv, JsonAlertLogThread *aft, const Packet *p)
 {
-    printf("AlertJsonDecoderEvent\n");
+    // printf("AlertJsonDecoderEvent\n");
     AlertJsonOutputCtx *json_output_ctx = aft->json_output_ctx;
     char timebuf[64];
 
