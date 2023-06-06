@@ -84,9 +84,9 @@ static int DetectTestMatch (DetectEngineThreadCtx *det_ctx, Packet *p,
 {
     int ret = 0;
     const DetectTestData *testd = (const DetectTestData *) ctx;
-
-    SCLogNotice("testd->dnsport: %d", testd->dnsport);
-    SCLogNotice("p->dp: %d", p->dp);
+//
+    // SCLogNotice("testd->dnsport: %d", testd->dnsport);
+    // SCLogNotice("p->dp: %d", p->dp);
     if (p->payload != NULL && p->payload_len > 0) {
         if (testd->dnsport == p->dp)
         {
