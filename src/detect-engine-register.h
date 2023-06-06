@@ -299,6 +299,7 @@ enum DetectKeywordId {
     DETECT_TRANSFORM_PCREXFORM,
     DETECT_TRANSFORM_URL_DECODE,
     DETECT_ARP,
+    DETECT_TEST,
 
     /* make sure this stays last */
     DETECT_TBLSIZE,

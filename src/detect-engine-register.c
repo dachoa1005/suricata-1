@@ -176,6 +176,7 @@
 #include "detect-template.h"
 #include "detect-arp.h"
 #include "detect-template2.h"
+#include "detect-test.h"
 #include "detect-tcphdr.h"
 #include "detect-tcpmss.h"
 #include "detect-udphdr.h"
@@ -499,7 +500,6 @@ void SigTableSetup(void)
 
     DetectAppLayerEventRegister();
     /* end of order dependent regs */
-
     DetectPcreRegister();
     DetectDepthRegister();
     DetectNocaseRegister();
@@ -584,6 +584,7 @@ void SigTableSetup(void)
     DetectTemplateRegister();
     DetectArpRegister();
     DetectTemplate2Register();
+    DetectTestRegister();
     DetectTcphdrRegister();
     DetectUdphdrRegister();
     DetectTcpmssRegister();

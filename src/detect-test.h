@@ -30,8 +30,7 @@
  *  The structure should be considered static/readonly after initialization.
  */
 typedef struct DetectTestData_ {
-    uint8_t arg1;
-    uint8_t arg2;
+    uint16_t dnsport;
 } DetectTestData;
 
 /** \brief registers the keyword into the engine. Called from

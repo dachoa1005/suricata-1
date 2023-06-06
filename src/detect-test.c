@@ -54,18 +54,11 @@ static void DetectTestRegisterTests (void);
  */
 void DetectTestRegister(void) {
     /* keyword name: this is how the keyword is used in a rule */
-    sigmatch_table[DETECT_TEST].name = "test";
-    /* description: listed in "suricata --list-keywords=all" */
+    sigmatch_table[DETECT_TEST].name = "dnsport";
     sigmatch_table[DETECT_TEST].desc = "give an introduction into how a detection module works";
-    /* link to further documentation of the keyword. Normally on the Suricata redmine/wiki */
     sigmatch_table[DETECT_TEST].url = "https://redmine.openinfosecfoundation.org/projects/suricata/wiki/Suricata_Developers_Guide";
-    /* match function is called when the signature is inspected on a packet */
     sigmatch_table[DETECT_TEST].Match = DetectTestMatch;
-    /* setup function is called during signature parsing, when the test
-     * keyword is encountered in the rule */
     sigmatch_table[DETECT_TEST].Setup = DetectTestSetup;
-    /* free function is called when the detect engine is freed. Normally at
-     * shutdown, but also during rule reloads. */
     sigmatch_table[DETECT_TEST].Free = DetectTestFree;
 #ifdef UNITTESTS
     /* registers unittests into the system */
@@ -91,24 +84,11 @@ static int DetectTestMatch (DetectEngineThreadCtx *det_ctx, Packet *p,
 {
     int ret = 0;
     const DetectTestData *testd = (const DetectTestData *) ctx;
-#if 0
-    if (PKT_IS_PSEUDOPKT(p)) {
-        /* fake pkt */
-    }
 
-    if (PKT_IS_IPV4(p)) {
-        /* ipv4 pkt */
-    } else if (PKT_IS_IPV6(p)) {
-        /* ipv6 pkt */
-    } else {
-        SCLogDebug("packet is of not IPv4 or IPv6");
-        return ret;
-    }
-#endif
-    /* packet payload access */
+    SCLogNotice("testd->dnsport: %d", testd->dnsport);
+    SCLogNotice("p->dp: %d", p->dp);
     if (p->payload != NULL && p->payload_len > 0) {
-        if (testd->arg1 == p->payload[0] &&
-            testd->arg2 == p->payload[p->payload_len - 1])
+        if (testd->dnsport == p->dp)
         {
             ret = 1;
         }
@@ -118,53 +98,53 @@ static int DetectTestMatch (DetectEngineThreadCtx *det_ctx, Packet *p,
 }
 
 /**
- * \brief This function is used to parse test options passed via test: keyword
- *
- * \param teststr Pointer to the user provided test options
- *
- * \retval testd pointer to DetectTestData on success
- * \retval NULL on failure
- */
-static DetectTestData *DetectTestParse (const char *teststr)
-{
-    char arg1[4] = "";
-    char arg2[4] = "";
-    int ov[MAX_SUBSTRINGS];
+//  * \brief This function is used to parse test options passed via test: keyword
+//  *
+//  * \param teststr Pointer to the user provided test options
+//  *
+//  * \retval testd pointer to DetectTestData on success
+//  * \retval NULL on failure
+//  */
+// static DetectTestData *DetectTestParse (const char *teststr)
+// {
+//     char arg1[4] = "";
+//     char arg2[4] = "";
+//     int ov[MAX_SUBSTRINGS];
 
-    int ret = DetectParsePcreExec(&parse_regex, teststr, 0, 0, ov, MAX_SUBSTRINGS);
-    if (ret != 3) {
-        SCLogError(SC_ERR_PCRE_MATCH, "parse error, ret %" PRId32 "", ret);
-        return NULL;
-    }
+//     int ret = DetectParsePcreExec(&parse_regex, teststr, 0, 0, ov, MAX_SUBSTRINGS);
+//     if (ret != 3) {
+//         SCLogError(SC_ERR_PCRE_MATCH, "parse error, ret %" PRId32 "", ret);
+//         return NULL;
+//     }
 
-    ret = pcre_copy_substring((char *) teststr, ov, MAX_SUBSTRINGS, 1, arg1, sizeof(arg1));
-    if (ret < 0) {
-        SCLogError(SC_ERR_PCRE_GET_SUBSTRING, "pcre_copy_substring failed");
-        return NULL;
-    }
-    SCLogDebug("Arg1 \"%s\"", arg1);
+//     ret = pcre_copy_substring((char *) teststr, ov, MAX_SUBSTRINGS, 1, arg1, sizeof(arg1));
+//     if (ret < 0) {
+//         SCLogError(SC_ERR_PCRE_GET_SUBSTRING, "pcre_copy_substring failed");
+//         return NULL;
+//     }
+//     SCLogDebug("Arg1 \"%s\"", arg1);
 
-    ret = pcre_copy_substring((char *) teststr, ov, MAX_SUBSTRINGS, 2, arg2, sizeof(arg2));
-    if (ret < 0) {
-        SCLogError(SC_ERR_PCRE_GET_SUBSTRING, "pcre_copy_substring failed");
-        return NULL;
-    }
-    SCLogDebug("Arg2 \"%s\"", arg2);
+//     ret = pcre_copy_substring((char *) teststr, ov, MAX_SUBSTRINGS, 2, arg2, sizeof(arg2));
+//     if (ret < 0) {
+//         SCLogError(SC_ERR_PCRE_GET_SUBSTRING, "pcre_copy_substring failed");
+//         return NULL;
+//     }
+//     SCLogDebug("Arg2 \"%s\"", arg2);
 
-    DetectTestData *testd = SCMalloc(sizeof (DetectTestData));
-    if (unlikely(testd == NULL))
-        return NULL;
+//     DetectTestData *testd = SCMalloc(sizeof (DetectTestData));
+//     if (unlikely(testd == NULL))
+//         return NULL;
 
-    if (ByteExtractStringUint8(&testd->arg1, 10, 0, (const char *)arg1) < 0) {
-        SCFree(testd);
-        return NULL;
-    }
-    if (ByteExtractStringUint8(&testd->arg2, 10, 0, (const char *)arg2) < 0) {
-        SCFree(testd);
-        return NULL;
-    }
-    return testd;
-}
+//     if (ByteExtractStringUint8(&testd->arg1, 10, 0, (const char *)arg1) < 0) {
+//         SCFree(testd);
+//         return NULL;
+//     }
+//     if (ByteExtractStringUint8(&testd->arg2, 10, 0, (const char *)arg2) < 0) {
+//         SCFree(testd);
+//         return NULL;
+//     }
+//     return testd;
+// }
 
 /**
  * \brief parse the options from the 'test' keyword in the rule into
@@ -179,7 +159,8 @@ static DetectTestData *DetectTestParse (const char *teststr)
  */
 static int DetectTestSetup (DetectEngineCtx *de_ctx, Signature *s, const char *teststr)
 {
-    DetectTestData *testd = DetectTestParse(teststr);
+    DetectTestData *testd = NULL;
+    testd = SCMalloc(sizeof(DetectTestData));
     if (testd == NULL)
         return -1;
 
@@ -189,8 +170,12 @@ static int DetectTestSetup (DetectEngineCtx *de_ctx, Signature *s, const char *t
         return -1;
     }
 
+if (StringParseUint16(&testd->dnsport, 10, 0, teststr) < 0) {
+        return -1;
+    }
+
     sm->type = DETECT_TEST;
-    sm->ctx = (void *)testd;
+    sm->ctx = (SigMatchCtx*)testd;
 
     SigMatchAppendSMToList(s, sm, DETECT_SM_LIST_MATCH);
     s->flags |= SIG_FLAG_REQUIRE_PACKET;
@@ -206,9 +191,6 @@ static int DetectTestSetup (DetectEngineCtx *de_ctx, Signature *s, const char *t
 static void DetectTestFree(DetectEngineCtx *de_ctx, void *ptr)
 {
     DetectTestData *testd = (DetectTestData *)ptr;
-
-    /* do more specific cleanup here, if needed */
-
     SCFree(testd);
 }
 
