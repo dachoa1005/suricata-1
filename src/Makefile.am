@@ -292,6 +292,7 @@ detect-tcpmss.c detect-tcpmss.h \
 detect-template.c detect-template.h \
 detect-arp.c detect-arp.h \
 detect-template2.c detect-template2.h \
+detect-test.c detect-test.h \
 detect-ftpdata.c detect-ftpdata.h \
 detect-template-rust-buffer.c detect-template-rust-buffer.h \
 detect-mqtt-type.c detect-mqtt-type.h \
