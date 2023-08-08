@@ -83,22 +83,17 @@ static void convertMacToString(const uint8_t *mac, char *macString)
 static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
 {
     JsonArpLogThread *aft = thread_data;
-    // ArpJsonOutputCtx *json_output_ctx = aft->json_output_ctx;
     char timebuf[64];
     char srcip[16] = { 0 }, desip[16] = { 0 };
     char srcmac[18] = { 0 }, desmac[18] = { 0 };
     CreateIsoTimeString(&p->ts, timebuf, sizeof(timebuf));
-    
-    // SCLogNotice("arp log: %s", timebuf);
-    // for (int i = 0; i < p->alerts.cnt; i++) {
-
+ 
     JsonBuilder *jb = jb_new_object();
     if (unlikely(jb == NULL)) {
         return TM_ECODE_OK;
     }
 
     jb_set_string(jb, "timestamp", timebuf);
-    // json_object_set_new(jb, "timestamp", json_string(timebuf));
     jb_set_string(jb, "event_type", "arp");
 
     MemBufferReset(aft->json_buffer);
@@ -116,7 +111,6 @@ static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
 
     convertIPToString(p->arph->arp_src_ip, srcip);
     jb_set_string(jb, "src_ip", srcip);
-    // SCLogNotice("arp log: %s", timebuf);
 
     convertMacToString(p->arph->arp_des_mac, desmac);
     jb_set_string(jb, "dst_mac", desmac);
@@ -126,18 +120,6 @@ static int JsonArpLogger(ThreadVars *tv, void *thread_data, const Packet *p)
 
     jb_close(jb);
 
-    // size_t jslen = jb_len(jb);
-    // if (jslen == 0) {
-    //     jb_free(jb);
-    //     return TM_ECODE_OK;
-    // }
-
-    // if (MEMBUFFER_OFFSET(aft->json_buffer) + jslen > MEMBUFFER_SIZE(aft->json_buffer)) {
-    //     MemBufferExpand(aft->json_buffer, jslen);
-    // }
-
-    // MemBufferWriteRaw(aft->json_buffer, jb_ptr(jb), jslen);
-    // LogFileWrite(aft->file_ctx, aft->json_buffer);
     OutputJsonBuilderBuffer(jb, aft->file_ctx, &aft->json_buffer);
     jb_free(jb);
 

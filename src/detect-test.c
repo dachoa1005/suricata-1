@@ -54,9 +54,9 @@ static void DetectTestRegisterTests (void);
  */
 void DetectTestRegister(void) {
     /* keyword name: this is how the keyword is used in a rule */
-    sigmatch_table[DETECT_TEST].name = "dnsport";
-    sigmatch_table[DETECT_TEST].desc = "give an introduction into how a detection module works";
-    sigmatch_table[DETECT_TEST].url = "https://redmine.openinfosecfoundation.org/projects/suricata/wiki/Suricata_Developers_Guide";
+    sigmatch_table[DETECT_TEST].name = "test";
+    sigmatch_table[DETECT_TEST].desc = "";
+    sigmatch_table[DETECT_TEST].url = "";
     sigmatch_table[DETECT_TEST].Match = DetectTestMatch;
     sigmatch_table[DETECT_TEST].Setup = DetectTestSetup;
     sigmatch_table[DETECT_TEST].Free = DetectTestFree;
@@ -84,11 +84,9 @@ static int DetectTestMatch (DetectEngineThreadCtx *det_ctx, Packet *p,
 {
     int ret = 0;
     const DetectTestData *testd = (const DetectTestData *) ctx;
-//
-    // SCLogNotice("testd->dnsport: %d", testd->dnsport);
-    // SCLogNotice("p->dp: %d", p->dp);
+
     if (p->payload != NULL && p->payload_len > 0) {
-        if (testd->dnsport == p->dp)
+        if (testd->test == p->dp)
         {
             ret = 1;
         }
@@ -170,7 +168,7 @@ static int DetectTestSetup (DetectEngineCtx *de_ctx, Signature *s, const char *t
         return -1;
     }
 
-if (StringParseUint16(&testd->dnsport, 10, 0, teststr) < 0) {
+if (StringParseUint16(&testd->test, 10, 0, teststr) < 0) {
         return -1;
     }
 

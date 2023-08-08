@@ -174,6 +174,7 @@
 #include "detect-geoip.h"
 #include "detect-app-layer-protocol.h"
 #include "detect-template.h"
+#include "detect-testt.h"
 #include "detect-arp.h"
 #include "detect-template2.h"
 #include "detect-test.h"
@@ -582,6 +583,7 @@ void SigTableSetup(void)
     DetectBase64DecodeRegister();
     DetectBase64DataRegister();
     DetectTemplateRegister();
+    DetectTesttRegister();
     DetectArpRegister();
     DetectTemplate2Register();
     DetectTestRegister();

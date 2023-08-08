@@ -290,6 +290,7 @@ detect-tcphdr.c detect-tcphdr.h \
 detect-udphdr.c detect-udphdr.h \
 detect-tcpmss.c detect-tcpmss.h \
 detect-template.c detect-template.h \
+detect-testt.c detect-testt.h \
 detect-arp.c detect-arp.h \
 detect-template2.c detect-template2.h \
 detect-test.c detect-test.h \

@@ -76,7 +76,7 @@ void DetectArpRegister(void)
     sigmatch_table[DETECT_ARP].RegisterTests = DetectArpRegisterTests;
 #endif
     /* set up the PCRE for keyword parsing */
-    // DetectSetupParseRegexes(PARSE_REGEX, &parse_regex);
+    DetectSetupParseRegexes(PARSE_REGEX, &parse_regex);
 }
 
 /**
